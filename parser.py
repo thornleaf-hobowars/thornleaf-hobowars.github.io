@@ -45,32 +45,36 @@ for p in posts:
 
 print(output)
 
-with open('data.json', 'w') as f:
+dir = datetime.today().strftime('%Y-%m-%d')
+if not os.path.exists(dir):
+    os.makedirs(dir) 
+
+with open(dir + '/data.json', 'w') as f:
     json.dump(output, f)
 
 
 cookies = {'substack.sid': os.environ.get("SESSION")}
 url = os.environ.get("DOMAIN") + '/api/v1/generate_image/generate_art'
 for post in output: 
-    myobj = {"prompt":post['post'],"style":"","num_images":4}
-
-    x = requests.post(url, json = myobj, cookies = cookies)
-
-    if not os.path.exists(post['id']):
-        os.mkdir(post['id']) 
-    dir = datetime.today().strftime('%Y-%m-%d')
-    full_dir = post['id'] + '/' + dir
+    full_dir = 'images/' + post['id'] + '/' + dir
     if not os.path.exists(full_dir):
-        os.mkdir(full_dir) 
+        os.makedirs(full_dir) 
+    if os.path.exists(full_dir + '/images.json'):
+        with open(full_dir + '/images.json', 'r', encoding='utf-8') as f:
+            images = f.read()
+            imageArrayString = json.loads(images)
+        should_wait = False
+    else :
+        print('getting imagse for id ' + post['id'])
+        myobj = {"prompt":post['post'],"style":"","num_images":4}
+        x = requests.post(url, json = myobj, cookies = cookies)
+        should_wait = True
 
-    print(x.text)
-    with open(full_dir + '/images.json', 'w') as f:
-        json.dump(x.text, f)
+        print(x.text)
+        with open(full_dir + '/images.json', 'w') as f:
+            json.dump(x.text, f)
 
-    # with open('images.json', 'r', encoding='utf-8') as f:
-    #     images = f.read()
-    #     imageArrayString = json.loads(images)
-    imageArrayString = x.text
+        imageArrayString = x.text
 
     imageArray = json.loads(imageArrayString)
 
@@ -80,8 +84,11 @@ for post in output:
         print(image)
         image_name = image.rsplit('/', 1)[-1]
 
-        img_data = requests.get(image).content
-        with open(full_dir + '/' + image_name + '.jpg', 'wb') as handler:
-            handler.write(img_data)
+        image_path = full_dir + '/' + image_name + '.jpg'
+        if not os.path.exists(image_path):
+            img_data = requests.get(image).content
+            with open(image_path, 'wb') as handler:
+                handler.write(img_data)
 
-    time.sleep(60/6)
+    if should_wait:
+        time.sleep(60/6)
