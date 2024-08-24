@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
-dotenv_path = join(dirname(__file__), '.env')
+dotenv_path = join(dirname(__file__), '../.env')
 load_dotenv(dotenv_path)
 
 with open(sys.argv[1], 'r', encoding='iso-8859-1') as f:
@@ -25,6 +25,12 @@ table = content.find('table')
 posts = table.find_all('tr', {'class': 'post-row'})
 
 output = []
+hobos = {}
+
+if os.path.exists('public/hobos.json'):
+    with open('public/hobos.json', 'r', encoding='iso-8859-1') as f:
+        parseableHobos = f.read()
+        hobos = json.loads(parseableHobos)
 
 for p in posts:
     name = p.find('span', {'class': 'player-name'})
@@ -41,22 +47,22 @@ for p in posts:
     # print(post_content.prettify())
     # print(post_content.text.strip())
 
+    hobos[id] = name_text
     output.append({ 'id': id, 'name': name_text, 'name_style': name_style, 'post': post_content})
 
 print(output)
+with open('public/hobos.json', 'w', encoding='iso-8859-1') as f:
+    json.dump(hobos, f)
 
-dir = datetime.today().strftime('%Y-%m-%d')
-if not os.path.exists(dir):
-    os.makedirs(dir) 
+date = datetime.today().strftime('%Y-%m-%d')
 
-with open(dir + '/data.json', 'w') as f:
+with open('public/' + date + '.json', 'w') as f:
     json.dump(output, f)
-
 
 cookies = {'substack.sid': os.environ.get("SESSION")}
 url = os.environ.get("DOMAIN") + '/api/v1/generate_image/generate_art'
 for post in output: 
-    full_dir = 'images/' + post['id'] + '/' + dir
+    full_dir = 'public/' + post['id'] + '/' + date
     if not os.path.exists(full_dir):
         os.makedirs(full_dir) 
     if os.path.exists(full_dir + '/images.json'):
