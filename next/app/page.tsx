@@ -10,8 +10,8 @@ export default function Page() {
         </Head>
         <h1>Hello, Next.js!</h1>
         <div>
-            {Object.entries(hobos).map(([id, name]) => (<div>{id}: <div dangerouslySetInnerHTML={{ __html: name }}></div>
+            {Object.entries(hobos).map(([id, name], index) => (<div key={index}>{id}: <div dangerouslySetInnerHTML={{ __html: name }}></div>
                 {escape(name)}</div>))}
-        </div>
+        </div >
     </>
 }
